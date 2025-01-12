@@ -2,6 +2,7 @@ const std = @import("std");
 const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
+const Rectangle = @import("rectangle.zig").Rectangle;
 
 pub fn main() !void {
     // SDL_Init initializes the Video-Subsystem of SDL.
@@ -26,6 +27,8 @@ pub fn main() !void {
     };
     defer c.SDL_DestroyRenderer(renderer);
 
+    var rect = Rectangle.init(350, 250);
+
     var quit = false;
 
     // This is the main loop - every cycle is a re-render:
@@ -36,6 +39,16 @@ pub fn main() !void {
             switch (event.type) {
                 // stop loop when window is closed
                 c.SDL_QUIT => quit = true,
+                c.SDL_KEYDOWN => {
+                    switch (event.key.keysym.sym) {
+                        c.SDLK_LEFT => rect.move(-1, 0),
+                        c.SDLK_RIGHT => rect.move(1, 0),
+                        c.SDLK_UP => rect.move(0, -1),
+                        c.SDLK_DOWN => rect.move(0, 1),
+                        c.SDLK_ESCAPE => quit = true,
+                        else => {},
+                    }
+                },
                 else => {},
             }
         }
@@ -49,15 +62,15 @@ pub fn main() !void {
         _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
         // Declare Rectangle Position and Measurements
-        const rect = c.SDL_Rect{
-            .x = 350,
-            .y = 250,
-            .w = 100,
-            .h = 100,
+        const sdl_rect = c.SDL_Rect{
+            .x = rect.x,
+            .y = rect.y,
+            .w = rect.width,
+            .h = rect.height,
         };
 
         // draw rectangle from above with latest picked color
-        _ = c.SDL_RenderFillRect(renderer, &rect);
+        _ = c.SDL_RenderFillRect(renderer, &sdl_rect);
 
         // Swap the back buffer with the front buffer (double buffering - one prepares, one shows)
         c.SDL_RenderPresent(renderer);
