@@ -1,24 +1,65 @@
 const std = @import("std");
+const c = @cImport({
+    @cInclude("SDL2/SDL.h");
+});
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    // SDL_Init initializes the Video-Subsystem of SDL.
+    // Returns negative value on error, 0 on success
+    if (c.SDL_Init(c.SDL_INIT_VIDEO) < 0) {
+        std.debug.print("SDL2 Initialization failed: {s}\n", .{c.SDL_GetError()});
+        return error.SDLInitializationFailed;
+    }
+    defer c.SDL_Quit();
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    // Create a window named "Moving Rectangle" with certain measurements in the center of the screen:
+    const window = c.SDL_CreateWindow("Moving Rectangle", c.SDL_WINDOWPOS_CENTERED, c.SDL_WINDOWPOS_CENTERED, 800, 600, c.SDL_WINDOW_SHOWN) orelse {
+        std.debug.print("Window could not be created: {s}\n", .{c.SDL_GetError()});
+        return error.SDLWindowCreationFailed;
+    };
+    defer c.SDL_DestroyWindow(window);
 
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
+    // Create the Renderer to render stuff on the window above and request GPU-Usage:
+    const renderer = c.SDL_CreateRenderer(window, -1, c.SDL_RENDERER_ACCELERATED) orelse {
+        std.debug.print("Renderer could not be created: {s}\n", .{c.SDL_GetError()});
+        return error.SDLRendererCreationFailed;
+    };
+    defer c.SDL_DestroyRenderer(renderer);
 
-    try bw.flush(); // don't forget to flush!
-}
+    var quit = false;
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+    // This is the main loop - every cycle is a re-render:
+    while (!quit) {
+        var event: c.SDL_Event = undefined;
+        // Process all pending events in the SDL event queue
+        while (c.SDL_PollEvent(&event) != 0) {
+            switch (event.type) {
+                // stop loop when window is closed
+                c.SDL_QUIT => quit = true,
+                else => {},
+            }
+        }
+        // Pick White Color
+        _ = c.SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+        // Clear Window with picked color
+        _ = c.SDL_RenderClear(renderer);
+
+        // Pick Black Color
+        _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
+        // Declare Rectangle Position and Measurements
+        const rect = c.SDL_Rect{
+            .x = 350,
+            .y = 250,
+            .w = 100,
+            .h = 100,
+        };
+
+        // draw rectangle from above with latest picked color
+        _ = c.SDL_RenderFillRect(renderer, &rect);
+
+        // Swap the back buffer with the front buffer (double buffering - one prepares, one shows)
+        c.SDL_RenderPresent(renderer);
+    }
 }

@@ -16,8 +16,8 @@ pub fn build(b: *std.Build) void {
     exe.linkFramework("CoreGraphics");
     exe.linkFramework("Foundation");
 
-    exe.addSystemIncludePath(.{ .path = "/opt/homebrew/include" });
-    exe.addLibraryPath(.{ .path = "/opt/homebrew/lib" });
+    exe.addIncludePath(.{ .cwd_relative = "/opt/homebrew/include" });
+    exe.addLibraryPath(.{ .cwd_relative = "/opt/homebrew/lib" });
 
     b.installArtifact(exe);
     const run_cmd = b.addRunArtifact(exe);
