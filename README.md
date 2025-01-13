@@ -10,3 +10,5 @@ To compile:
 3. run zig build
 
 The executable is generated in <project-folder>/zig-out/bin
+
+Download working build to be executed on Windows here: [Windows_x86_64](./executables/Windows_x86_64.zip)
