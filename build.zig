@@ -27,6 +27,8 @@ pub fn build(b: *std.Build) void {
         exe.linkSystemLibrary("SDL2main");
         exe.linkSystemLibrary("shell32");
 
+        exe.subsystem = .Windows;
+
         const dll_path = std.fs.path.join(
             b.allocator,
             &[_][]const u8{ sdl_path, "lib", "x64", "SDL2.dll" },
